@@ -1,0 +1,17 @@
+{
+    "name": "master/uts",
+    "require": {
+        "aws/aws-sdk-php": "^3.199"
+    },
+    "autoload": {
+        "psr-4": {
+            "Master\\Uts\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Mochammad Syaifuddin Zuhri",
+            "email": "1941720013@student.polinema.ac.id"
+        }
+    ]
+}
