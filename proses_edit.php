@@ -2,6 +2,18 @@
 // memanggil file koneksi.php untuk melakukan koneksi database
 include 'koneksi.php';
 
+
+require 'vendor/autoload.php';
+
+use Aws\S3\S3Client;
+use Aws\Exception\AwsException;
+use Aws\S3\Exception\S3Exception;
+
+define('ORACLE_ACCESS_KEY', 'a70f1894bf90fd1e18a71ce0b6798ca1a01d5e8b');
+define('ORACLE_SECRET_KEY', 'IIr2S3hEpad3SLswUNhmVGyq/qRELVOKxU5hGRpV0cU=');
+define('ORACLE_REGION', 'ap-melbourne-1');
+define('ORACLE_ENDPOINT', 'https://objectstorage.ap-melbourne-1.oraclecloud.com/p/vRJwMWOgtU27BSS9oHfOIHNUTkdXaAuNgS552vOM7dGzQ3iYDJToSv_pK5BwRXiz/n/axnlcng6z9ko/b/UTS2-vildanuramalia/o/');
+
 	// membuat variabel untuk menampung data dari form
   $id = $_POST['id'];
   $nama_produk   = $_POST['nama_produk'];
@@ -18,10 +30,29 @@ include 'koneksi.php';
     $angka_acak     = rand(1,999);
     $nama_gambar_baru = $angka_acak.'-'.$gambar_produk; //menggabungkan angka acak dengan nama file sebenarnya
     if(in_array($ekstensi, $ekstensi_diperbolehkan) === true)  {
-                  move_uploaded_file($file_tmp, 'gambar/'.$nama_gambar_baru); //memindah file gambar ke folder gambar
-                      
+                  // move_uploaded_file($file_tmp, 'gambar/'.$nama_gambar_baru); //memindah file gambar ke folder gambar
+                       // UPLOAD TO OBJECT STORAGE
+                $S3 = new S3Client([
+                  'region'  => ORACLE_REGION,
+                  'version' => 'latest',
+                  'credentials' => [
+                      'key'    => ORACLE_ACCESS_KEY,
+                      'secret' => ORACLE_SECRET_KEY
+                  ],
+                  'bucket_endpoint' => true,
+                  'endpoint' => ORACLE_ENDPOINT
+              ]);
+
+              $result = $S3->putObject([
+                  'Bucket' => 'uts',
+                  'Key' => $nama_gambar_baru,
+                  'SourceFile' => $file_tmp,
+                  'StorageClass' => 'REDUCED_REDUNDANCY',
+              ]);
+              $url = $result['ObjectURL'] . PHP_EOL;
+ 
                     // jalankan query UPDATE berdasarkan ID yang produknya kita edit
-                   $query  = "UPDATE produk SET nama_produk = '$nama_produk', deskripsi = '$deskripsi', harga_beli = '$harga_beli', harga_jual = '$harga_jual', gambar_produk = '$nama_gambar_baru'";
+                   $query  = "UPDATE produk SET nama_produk = '$nama_produk', deskripsi = '$deskripsi', harga_beli = '$harga_beli', harga_jual = '$harga_jual', gambar_produk = '$url'";
                     $query .= "WHERE id = '$id'";
                     $result = mysqli_query($koneksi, $query);
                     // periska query apakah ada error
